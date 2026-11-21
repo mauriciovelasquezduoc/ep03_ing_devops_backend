@@ -5,10 +5,10 @@ spring:
 
   # ── PostgreSQL local (dev) ────────────────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://db:5432/ep02
+    url: jdbc:postgresql://db:5432/ep03
     driverClassName: org.postgresql.Driver
-    username: ep02_user
-    password: ep02_pass
+    username: ep03_user
+    password: ep03_pass
 
   jpa:
     hibernate:

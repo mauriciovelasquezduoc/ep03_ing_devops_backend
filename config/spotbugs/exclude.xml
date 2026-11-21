@@ -5,7 +5,7 @@
     xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/master/spotbugs/etc/findbugsfilter.xsd">
 
     <!--
-        Exclusiones de SpotBugs para ep02-app.
+        Exclusiones de SpotBugs para ep03-app.
 
         Reglas por patrones conocidos como falsos positivos en aplicaciones
         Spring Boot (entidades JPA, inyección de dependencias, DTOs mutables).

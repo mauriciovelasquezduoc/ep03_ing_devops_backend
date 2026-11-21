@@ -37,7 +37,7 @@ RUN apk --no-cache upgrade && apk --no-cache add curl
 RUN addgroup -S appgroup && adduser -S -G appgroup appuser
 
 # Copiamos el jar generado
-COPY --from=build /app/build/libs/ep02-app-1.0.0.jar app.jar
+COPY --from=build /app/build/libs/ep03-app-1.0.0.jar app.jar
 
 RUN chown appuser:appgroup app.jar
 

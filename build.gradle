@@ -16,7 +16,7 @@ plugins {
     id 'de.undercouch.download' version '5.7.0'       // descarga JMeter para pruebas de carga
 }
 
-group = 'cl.duocuc.ep02'
+group = 'cl.duocuc.ep03'
 version = '1.0.0'
 
 java {
@@ -128,8 +128,8 @@ sonar {
 }
 
 pitest {
-    targetClasses         = ['cl.duocuc.ep02.*']
-    targetTests           = ['cl.duocuc.ep02.*']
+    targetClasses         = ['cl.duocuc.ep03.*']
+    targetTests           = ['cl.duocuc.ep03.*']
     junit5PluginVersion   = '1.2.1'
     mutationThreshold     = 80
     coverageThreshold     = 80
@@ -141,7 +141,7 @@ pitest {
 
 contracts {
     testFramework         = org.springframework.cloud.contract.verifier.config.TestFramework.JUNIT5
-    baseClassForTests     = 'cl.duocuc.ep02.contract.AlumnoContractBase'
+    baseClassForTests     = 'cl.duocuc.ep03.contract.AlumnoContractBase'
     contractsDslDir       = file('src/test/resources/contracts')
 }
 
@@ -296,7 +296,7 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
 // ─────────────────────────────────────────────────────────────────────────────
 // GATLING — Pruebas de carga / rendimiento (equivalente a gatling-maven-plugin)
 // Uso local:  ./gradlew gatlingRun   (requiere la app en http://localhost:8080)
-// Simulación: src/gatling/java/cl/duocuc/ep02/AlumnosSimulation.java
+// Simulación: src/gatling/java/cl/duocuc/ep03/AlumnosSimulation.java
 // Reporte:    build/reports/gatling/
 // ─────────────────────────────────────────────────────────────────────────────
 gatling {
@@ -323,14 +323,14 @@ configurations.matching { it.name.toLowerCase().startsWith('gatling') }.configur
 
 // ─────────────────────────────────────────────────────────────────────────────
 // JMETER — Pruebas de carga (equivalente al perfil jmeter del pom.xml)
-// Descarga Apache JMeter y ejecuta el plan src/test/jmeter/ep02.jmx
+// Descarga Apache JMeter y ejecuta el plan src/test/jmeter/ep03.jmx
 // Uso local:  ./gradlew jmeterTest   (requiere la app en http://localhost:8080)
 // Resultado:  build/jmeter/results/results.jtl
 // ─────────────────────────────────────────────────────────────────────────────
 def jmeterVersion = '5.6.3'
 def jmeterArchiveFile = layout.buildDirectory.file("jmeter/apache-jmeter-${jmeterVersion}.tgz")
 def jmeterHomeDir = layout.buildDirectory.dir("jmeter/apache-jmeter-${jmeterVersion}")
-def jmeterPlanFile = file('src/test/jmeter/ep02.jmx')
+def jmeterPlanFile = file('src/test/jmeter/ep03.jmx')
 
 tasks.register('downloadJmeter', Download) {
     group = 'verification'

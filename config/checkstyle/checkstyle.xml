@@ -4,7 +4,7 @@
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-    Checkstyle - convenciones de programación para ep02-app.
+    Checkstyle - convenciones de programación para ep03-app.
 
     Se usa un conjunto curado de reglas (no google_checks.xml) porque el
     proyecto usa indentación de 4 espacios y nombres de test descriptivos,

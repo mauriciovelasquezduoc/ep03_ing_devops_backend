@@ -1,11 +1,11 @@
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description "GET /ep02/export retorna CSV con los ep02"
+    description "GET /ep03/export retorna CSV con los ep03"
 
     request {
         method GET()
-        url '/ep02/export'
+        url '/ep03/export'
     }
 
     response {

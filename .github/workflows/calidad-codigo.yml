@@ -1,5 +1,5 @@
 # ============================================================================
-# Pipeline de calidad de código - backend ep02 (Gradle / Spring Boot)
+# Pipeline de calidad de código - backend ep03 (Gradle / Spring Boot)
 #
 # Port del pipeline Maven de referencia (calidad-codigo.yml + pom.xml) a Gradle.
 #
@@ -350,7 +350,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Ejecutar pruebas BDD con Cucumber
-        run: ./gradlew --no-daemon test --tests "cl.duocuc.ep02.cucumber.CucumberRunnerTest"
+        run: ./gradlew --no-daemon test --tests "cl.duocuc.ep03.cucumber.CucumberRunnerTest"
 
   # ============================================================
   # 11. CONTAINER - Docker + Trivy
@@ -365,12 +365,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Construir la imagen Docker
-        run: docker build -t ep02-backend:${{ github.sha }} .
+        run: docker build -t ep03-backend:${{ github.sha }} .
 
       - name: Escanear la imagen con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ep02-backend:${{ github.sha }}
+          image-ref: ep03-backend:${{ github.sha }}
           vuln-type: 'os'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
@@ -387,21 +387,21 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: ep02
-          POSTGRES_USER: ep02_user
-          POSTGRES_PASSWORD: ep02_pass
+          POSTGRES_DB: ep03
+          POSTGRES_USER: ep03_user
+          POSTGRES_PASSWORD: ep03_pass
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ep02_user -d ep02"
+          --health-cmd "pg_isready -U ep03_user -d ep03"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ep02
-      SPRING_DATASOURCE_USERNAME: ep02_user
-      SPRING_DATASOURCE_PASSWORD: ep02_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ep03
+      SPRING_DATASOURCE_USERNAME: ep03_user
+      SPRING_DATASOURCE_PASSWORD: ep03_pass
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -448,7 +448,7 @@ jobs:
         if: always()
         run: |
           pkill -f 'bootRun' || true
-          pkill -f 'cl.duocuc.ep02' || true
+          pkill -f 'cl.duocuc.ep03' || true
 
   # ============================================================
   # 13. PERFORMANCE - Gatling
@@ -462,21 +462,21 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: ep02
-          POSTGRES_USER: ep02_user
-          POSTGRES_PASSWORD: ep02_pass
+          POSTGRES_DB: ep03
+          POSTGRES_USER: ep03_user
+          POSTGRES_PASSWORD: ep03_pass
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ep02_user -d ep02"
+          --health-cmd "pg_isready -U ep03_user -d ep03"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ep02
-      SPRING_DATASOURCE_USERNAME: ep02_user
-      SPRING_DATASOURCE_PASSWORD: ep02_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ep03
+      SPRING_DATASOURCE_USERNAME: ep03_user
+      SPRING_DATASOURCE_PASSWORD: ep03_pass
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -526,7 +526,7 @@ jobs:
         if: always()
         run: |
           pkill -f 'bootRun' || true
-          pkill -f 'cl.duocuc.ep02' || true
+          pkill -f 'cl.duocuc.ep03' || true
 
   # ============================================================
   # 14. PERFORMANCE-JMETER - JMeter
@@ -540,21 +540,21 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: ep02
-          POSTGRES_USER: ep02_user
-          POSTGRES_PASSWORD: ep02_pass
+          POSTGRES_DB: ep03
+          POSTGRES_USER: ep03_user
+          POSTGRES_PASSWORD: ep03_pass
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ep02_user -d ep02"
+          --health-cmd "pg_isready -U ep03_user -d ep03"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ep02
-      SPRING_DATASOURCE_USERNAME: ep02_user
-      SPRING_DATASOURCE_PASSWORD: ep02_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ep03
+      SPRING_DATASOURCE_USERNAME: ep03_user
+      SPRING_DATASOURCE_PASSWORD: ep03_pass
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -604,4 +604,4 @@ jobs:
         if: always()
         run: |
           pkill -f 'bootRun' || true
-          pkill -f 'cl.duocuc.ep02' || true
+          pkill -f 'cl.duocuc.ep03' || true

@@ -1,11 +1,11 @@
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description "POST /ep02 crea un alumno y retorna el objeto con id"
+    description "POST /ep03 crea un alumno y retorna el objeto con id"
 
     request {
         method POST()
-        url '/ep02'
+        url '/ep03'
         headers {
             contentType applicationJson()
         }
