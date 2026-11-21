@@ -1,0 +1,28 @@
+# docker-compose standalone del backend
+# Ejecutar segundo (despues de la DB): docker compose up -d
+services:
+  ep02-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ep02-backend:latest
+    container_name: ep02-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ep02-db:5432/ep02
+      SPRING_DATASOURCE_USERNAME: ep02_user
+      SPRING_DATASOURCE_PASSWORD: ep02_pass
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          # Techo de memoria: complementa el -Xmx256m del Dockerfile
+          memory: 512M
+    networks:
+      - ep02-network
+
+networks:
+  ep02-network:
+    external: true
