@@ -1,0 +1,29 @@
+# values.yaml - Configuración de Kubernetes para el proyecto backend
+# Este proyecto se instala de forma independiente (repo autónomo).
+
+# Namespace compartido por los 3 proyectos.
+# DEBE coincidir con NAMESPACE en ep03_ing_devops_database y ep03_ing_devops_frontend
+NAMESPACE=ep03
+
+# Imagen ECR — la cuenta se resuelve en runtime desde AWS STS (apply.sh),
+# por lo que aquí se deja el placeholder <AWSAccountId>.
+BACKEND_IMAGE=<AWSAccountId>.dkr.ecr.us-east-1.amazonaws.com/ep03-backend:latest
+
+# Backend
+BACKEND_PORT=8080
+BACKEND_REPLICAS=1
+BACKEND_CPU_REQUEST=100m
+BACKEND_CPU_LIMIT=500m
+BACKEND_MEM_REQUEST=128Mi
+BACKEND_MEM_LIMIT=512Mi
+BACKEND_HPA_MIN=1
+BACKEND_HPA_MAX=10
+BACKEND_HPA_CPU=70
+
+# Conexion a la base de datos.
+# REQUISITO: el proyecto database debe estar aplicado primero (crea el
+# namespace y el Secret database-secret). Estos valores deben coincidir con
+# el values.yaml de ep03_ing_devops_database.
+DATABASE_NAME=ep03
+DATABASE_USER=ep03_user
+DATABASE_PORT=5432
