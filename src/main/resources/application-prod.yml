@@ -19,3 +19,19 @@ spring:
 
 cors:
   allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+
+# ==================================================================
+# Observabilidad — metricas del microservicio hacia AWS CloudWatch
+# (IE12). El push lo hace Micrometer (micrometer-registry-cloudwatch2);
+# las credenciales las resuelve la cadena por defecto de AWS SDK
+# (identidad del rol del nodo EKS via IMDS, sin claves en el pod).
+# Requiere que el rol del nodo tenga cloudwatch:PutMetricData.
+# ==================================================================
+management:
+  cloudwatch:
+    metrics:
+      export:
+        enabled: true
+        namespace: Ep03/App
+        step: 1m
+        # maxValuesPerRequest: 20  # (default) lote por llamada a PutMetricData

@@ -32,7 +32,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # prometheus: metricas del microservicio para scraping / dashboards
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
@@ -43,3 +44,13 @@ management:
       enabled: true
     livenessstate:
       enabled: true
+  observations:
+    key-values:
+      # Etiqueta que acompana todas las metricas del microservicio
+      application: ep03-backend
+  cloudwatch:
+    metrics:
+      export:
+        # El push a CloudWatch solo se activa en el perfil "prod"
+        # (application-prod.yml); en tests/CI no hay credenciales AWS.
+        enabled: false

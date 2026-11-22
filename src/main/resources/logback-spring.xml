@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  logback-spring.xml — Trazabilidad detallada de logs (IE11)
+
+  - Perfil "test": salida de consola legible (los tests no necesitan JSON).
+  - Resto (dev/prod): cada linea de log sale como JSON estructurado
+    (LogstashEncoder) en stdout, que Fluent Bit recolecta hacia CloudWatch
+    Logs. Incluye automaticamente el MDC (requestId, path) que agrega
+    RequestTraceFilter, permitiendo correlacionar todos los logs de una
+    misma peticion HTTP.
+-->
+<configuration>
+
+  <!-- ==== Perfil test: consola simple (igual que el default de Boot) ==== -->
+  <springProfile name="test">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %level [%thread] [%logger{40}] - %msg%n</pattern>
+      </encoder>
+    </appender>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+  <!-- ==== dev / prod / sin perfil: JSON estructurado en stdout ==== -->
+  <springProfile name="!test">
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <customFields>{"service":"ep03-backend","cluster_pod":"${POD_NAME:-local}"}</customFields>
+        <includeMdc>true</includeMdc>
+        <includeContext>false</includeContext>
+        <timeZone>UTC</timeZone>
+      </encoder>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="JSON_CONSOLE"/>
+    </root>
+
+    <!-- Niveles por capa (ajustables por entorno) -->
+    <logger name="cl.duocuc.ep03" level="INFO"/>
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="org.springframework.security" level="WARN"/>
+  </springProfile>
+
+</configuration>

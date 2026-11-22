@@ -605,3 +605,116 @@ jobs:
         run: |
           pkill -f 'bootRun' || true
           pkill -f 'cl.duocuc.ep03' || true
+
+  # ============================================================
+  # 15. METRICAS CI/CD - publicacion a AWS CloudWatch (IE12)
+  # ============================================================
+  # Extrae las metricas clave de desempeno y calidad del pipeline y las
+  # publica en el namespace Ep03/CI para alimentar el dashboard
+  # "ep03-observabilidad" (bloque06-observabilidad/crear-dashboard.sh):
+  #   - BuildDurationSeconds : tiempo total de build (inicio del run -> ahora)
+  #   - TestCoveragePercent  : cobertura de lineas JaCoCo
+  #   - TestsFailed          : sumatoria failures+errors de los XML JUnit
+  # Corre con if: always() para que un run con fallas tambien publique
+  # TestsFailed (deteccion de eventos criticos del propio pipeline).
+  # ============================================================
+  metricas-ci:
+    name: Métricas CI/CD -> CloudWatch (Ep03/CI)
+    needs:
+      [
+        spotless,
+        checkstyle,
+        pmd,
+        spotbugs,
+        test,
+        mutation,
+        jacoco,
+        sonarqube,
+        snyk,
+        cucumber,
+        container,
+        dast,
+        performance,
+        performance-jmeter,
+      ]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Dar permisos a gradlew
+        run: chmod +x gradlew
+
+      - name: Ejecutar tests y reporte de cobertura para extraer métricas
+        run: ./gradlew --no-daemon test contractTest jacocoTestReport
+
+      - name: Calcular métricas del pipeline
+        id: metricas
+        run: |
+          set -euo pipefail
+
+          # 1) Tiempo de build: inicio del run (API de GitHub) -> ahora
+          STARTED_AT=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq .run_started_at)
+          BUILD_SECONDS=$(( $(date -u +%s) - $(date -u -d "$STARTED_AT" +%s) ))
+          echo "build_seconds=${BUILD_SECONDS}" >> "$GITHUB_OUTPUT"
+          echo "Duración del run: ${BUILD_SECONDS}s (inició ${STARTED_AT})"
+
+          # 2) Cobertura de líneas JaCoCo (contador raíz = último del XML)
+          JACOCO="build/reports/jacoco/test/jacocoTestReport.xml"
+          if [ -f "$JACOCO" ]; then
+            LINE_COUNTER=$(grep -o '<counter type="LINE" missed="[0-9]*" covered="[0-9]*"' "$JACOCO" | tail -1)
+            MISSED=$(echo "$LINE_COUNTER"   | sed -E 's/.*missed="([0-9]+)".*/\1/')
+            COVERED=$(echo "$LINE_COUNTER"  | sed -E 's/.*covered="([0-9]+)".*/\1/')
+            TOTAL=$(( ${MISSED:-0} + ${COVERED:-0} ))
+            [ "$TOTAL" -gt 0 ] || TOTAL=1
+            COVERAGE=$(awk "BEGIN{printf \"%.1f\", ${COVERED:-0}*100/$TOTAL}")
+          else
+            echo "::warning::No se encontró $JACOCO"; COVERAGE=0
+          fi
+          echo "coverage=${COVERAGE}" >> "$GITHUB_OUTPUT"
+
+          # 3) Tests fallidos (failures + errors en todos los XML de JUnit)
+          TESTS_FAILED=0
+          for f in build/test-results/test/*.xml build/test-results/contractTest/*.xml; do
+            [ -f "$f" ] || continue
+            FAILURES=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*' || echo 0)
+            ERRORS=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*' || echo 0)
+            TESTS_FAILED=$(( TESTS_FAILED + ${FAILURES:-0} + ${ERRORS:-0} ))
+          done
+          echo "tests_failed=${TESTS_FAILED}" >> "$GITHUB_OUTPUT"
+
+      - name: Configurar credenciales AWS
+        if: always()
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION || env.AWS_REGION }}
+
+      - name: Publicar métricas en CloudWatch (namespace Ep03/CI)
+        if: always()
+        run: |
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "::warning::Sin AWS_ACCESS_KEY_ID en secrets; métricas CI/CD no publicadas."
+            exit 0
+          fi
+          aws cloudwatch put-metric-data \
+            --namespace Ep03/CI \
+            --region "$AWS_REGION" \
+            --dimensions Repository=${{ github.repository }},Branch=${{ github.ref_name }} \
+            --metric-data \
+              "MetricName=BuildDurationSeconds,Value=${{ steps.metricas.outputs.build_seconds }},Unit=Seconds" \
+              "MetricName=TestCoveragePercent,Value=${{ steps.metricas.outputs.coverage }},Unit=Percent" \
+              "MetricName=TestsFailed,Value=${{ steps.metricas.outputs.tests_failed }},Unit=Count"
+          echo "Métricas publicadas: build=${{ steps.metricas.outputs.build_seconds }}s, cobertura=${{ steps.metricas.outputs.coverage }}%, tests fallidos=${{ steps.metricas.outputs.tests_failed }}"
