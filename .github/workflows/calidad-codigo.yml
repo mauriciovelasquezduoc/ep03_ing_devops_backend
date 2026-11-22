@@ -660,14 +660,23 @@ jobs:
 
       - name: Calcular métricas del pipeline
         id: metricas
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
-          # 1) Tiempo de build: inicio del run (API de GitHub) -> ahora
-          STARTED_AT=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq .run_started_at)
-          BUILD_SECONDS=$(( $(date -u +%s) - $(date -u -d "$STARTED_AT" +%s) ))
-          echo "build_seconds=${BUILD_SECONDS}" >> "$GITHUB_OUTPUT"
-          echo "Duración del run: ${BUILD_SECONDS}s (inició ${STARTED_AT})"
+          # 1) Tiempo de build: inicio del run (API de GitHub) -> ahora.
+          # Si la API falla, se omite la metrica (el paso de publicacion
+          # descarta valores no numericos) sin romper el job.
+          STARTED_AT=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --jq .run_started_at 2>/dev/null || echo "")
+          if [ -n "$STARTED_AT" ] && date -u -d "$STARTED_AT" +%s > /dev/null 2>&1; then
+            BUILD_SECONDS=$(( $(date -u +%s) - $(date -u -d "$STARTED_AT" +%s) ))
+            echo "build_seconds=${BUILD_SECONDS}" >> "$GITHUB_OUTPUT"
+            echo "Duración del run: ${BUILD_SECONDS}s (inició ${STARTED_AT})"
+          else
+            echo "::warning::No se pudo leer run_started_at de la API; BuildDurationSeconds se omite."
+          fi
 
           # 2) Cobertura de líneas JaCoCo (contador raíz = último del XML)
           JACOCO="build/reports/jacoco/test/jacocoTestReport.xml"
