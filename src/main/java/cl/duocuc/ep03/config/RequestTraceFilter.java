@@ -1,17 +1,20 @@
 package cl.duocuc.ep03.config;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.UUID;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Agrega un identificador de correlacion a cada peticion HTTP.
@@ -30,6 +33,7 @@ public class RequestTraceFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
     private static final String MDC_REQUEST_ID = "requestId";
     private static final String MDC_PATH = "path";
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestTraceFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -37,6 +41,7 @@ public class RequestTraceFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        final long inicio = System.currentTimeMillis();
         try {
             String requestId = request.getHeader(REQUEST_ID_HEADER);
             if (requestId == null || requestId.isBlank()) {
@@ -49,6 +54,14 @@ public class RequestTraceFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } finally {
+            // Log de acceso por peticion (trazabilidad detallada): cada linea
+            // JSON viaja con requestId, path, metodo, estado y duracion.
+            long duracionMs = System.currentTimeMillis() - inicio;
+            LOGGER.info("HTTP {} {} -> {} ({} ms)",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    response.getStatus(),
+                    duracionMs);
             MDC.remove(MDC_REQUEST_ID);
             MDC.remove(MDC_PATH);
         }
