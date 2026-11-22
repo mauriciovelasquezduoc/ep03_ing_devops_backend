@@ -28,8 +28,10 @@ java {
 repositories { mavenCentral() }
 
 // Forzar versiones seguras de dependencias con CVEs conocidos
-// Spring Boot 3.5.3 trae Tomcat 10.1.42 — forzamos 10.1.54 (fix CVEs)
-ext['tomcat.version'] = '10.1.60'
+// Spring Boot 3.5.16 trae Tomcat 10.1.60 — forzamos 10.1.61 (fix CVEs
+// SNYK-JAVA-ORGAPACHETOMCATEMBED-21707475/-21707477: Missing Critical Step
+// in Authentication y Access Control Bypass, Critical, hallazgo Snyk 2026-11).
+ext['tomcat.version'] = '10.1.61'
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
