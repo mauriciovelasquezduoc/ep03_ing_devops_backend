@@ -12,7 +12,7 @@ plugins {
     id 'pmd'                                          // valida reglas estáticas
     id 'checkstyle'                                   // convenciones de programación
     id 'com.github.spotbugs' version '6.5.12'         // bugs potenciales en bytecode
-    id 'io.gatling.gradle' version '3.16.0'           // pruebas de carga (rendimiento)
+    id 'io.gatling.gradle' version '3.16.1'           // pruebas de carga (rendimiento)
     id 'de.undercouch.download' version '5.7.0'       // descarga JMeter para pruebas de carga
 }
 
@@ -46,6 +46,9 @@ dependencies {
     // ========================================================================
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'io.micrometer:micrometer-registry-cloudwatch2'
+    // BOM del AWS SDK (recomendado por Snyk): alinea todos los modulos awssdk
+    // (incluido netty-nio-client) con 2.52.1, que trae netty parcheado.
+    implementation platform('software.amazon.awssdk:bom:2.52.1')
     implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
     implementation 'org.projectlombok:lombok'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
@@ -315,13 +318,29 @@ gatling {
     includeMainOutput = false
 }
 
-// Gatling 3.16 requiere Netty 4.2, pero la gestión de dependencias de Spring Boot
-// fuerza Netty 4.1 (sin io.netty.channel.IoOps). Se fija 4.2.x solo en las
-// configuraciones de Gatling para no afectar a la aplicación.
-configurations.matching { it.name.toLowerCase().startsWith('gatling') }.configureEach { cfg ->
-    cfg.resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == 'io.netty') {
-            def name = details.requested.name
+// ── Parcheo de dependencias vulnerableS (hallazgos Snyk, 2026-11) ────────────
+// 1. jackson 2.21.4 -> 2.21.8
+//    SNYK-JAVA-COMFASTERXMLJACKSONCORE-21761837 (Critical, deserializacion).
+// 2. netty -> 4.2.18.Final
+//    SNYK-JAVA-IONETTY-19005879 (Critical): netty-handler 4.1.135.Final es
+//    vulnerable y llega por software.amazon.awssdk:netty-nio-client. La app
+//    corre sobre Tomcat (no usa netty en runtime); netty solo entra por
+//    awssdk (micrometer-cloudwatch) y Gatling. El BOM awssdk 2.52.1 de arriba
+//    alinea el cliente; este force asegura que ninguna ruta arrastre 4.1.x.
+//    Gatling 3.16 requiere 4.2 (Spring Boot la forzaria a 4.1): un solo bloque
+//    global cubre app, gatling y test.
+// 3. Gatling 3.16.0 -> 3.16.1 (plugin, arriba): corrige brotli4j
+//    SNYK-JAVA-COMAAYUSHATHARVABROTLI4J-2176286x (Out-of-bounds Write).
+configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        def group = details.requested.group
+        def name = details.requested.name
+        if (group.startsWith('com.fasterxml.jackson')
+                && name != 'jackson-bom' && name != 'jackson-annotations') {
+            // jackson-annotations no publica 2.21.8 (esquema de versiones
+            // propio); Boot gestiona su version compatible.
+            details.useVersion '2.21.8'
+        } else if (group == 'io.netty') {
             if (name.startsWith('netty-tcnative')) {
                 // tcnative usa su propio esquema de versiones (2.0.x)
                 details.useVersion '2.0.84.Final'
